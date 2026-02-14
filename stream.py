@@ -1,32 +1,33 @@
 import streamlit as st
-import requests
+import joblib
+import pandas as pd
+model = joblib.load("student_model.pk1")
 
-st.title("student result prediction")
-st.write("enter student details below:")
-study_hours=st.number_input("study_hours", min_value=0.0)
-attendance=st.number_input("Attendance(%)", min_value=0.0)
-internal_marks=st.number_input("internal_marks", min_value=0.0)
+st.title("Student Result Prediction")
 
-if st.button("predict"):
-    data={
+st.write("Enter student details below:")
+
+study_hours = st.number_input("Study Hours", min_value=0.0)
+attendance = st.number_input("Attendance (%)", min_value=0.0)
+internal_marks = st.number_input("Internal Marks", min_value=0.0)
+
+if st.button("Predict"):
+
+    input_df = pd.DataFrame([{
         "study_hours": study_hours,
         "attendance": attendance,
         "internal_marks": internal_marks
-    }
-    response=requests.post(
-        "http://127.0.0.1:8000/predict",
-        json=data
-    )
-    if response.status_code==200:
-        result=response.json()
-        prediction=result["prediction"]
-        confidence=result.get("confidence", None)
-        if prediction==1:
-            st.success("student is likely to pass")
-        else:
-            st.error("student is likely to fail")
-        if confidence is not None:
-            st.write(f"confidence:{round(confidence*100, 2)}%")
+    }])
+
+    prediction = model.predict(input_df)[0]
+    probability = model.predict_proba(input_df)[0][1]
+
+    if prediction == 1:
+        st.success("Student is likely to PASS ✅")
     else:
-        st.error("error connecting to api")            
+        st.error("Student is likely to FAIL ❌")
+
+    st.write(f"Confidence: {round(probability * 100, 2)}%")
+            
+
 
